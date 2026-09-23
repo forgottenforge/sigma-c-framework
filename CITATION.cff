@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite both the software and the paper below."
+title: "sigma-c-framework"
+abstract: >-
+  Susceptibility-based operational scale selection: the disciplined-reader kernel
+  sigma_c. Every output carries a 4-code applicability verdict and a blindness map.
+type: software
+authors:
+  - name: "ForgottenForge"
+    email: "nfo@forgottenforge.xyz"
+    website: "https://forgottenforge.xyz"
+version: "6.0.0"
+license: "AGPL-3.0-or-later OR LicenseRef-ForgottenForge-Commercial"
+url: "https://github.com/forgottenforge/sigma-c-framework"
+repository-code: "https://github.com/forgottenforge/sigma-c-framework"
+
+# ---------------------------------------------------------------------------
+# The paper. The SINGLE SOURCE OF TRUTH for the reference is `sigma_c.__paper__`
+# (sigma_c/__init__.py); this file mirrors it. STATUS: preprint on Zenodo. When a
+# journal publication lands, update THREE places only: (1) sigma_c.__paper__
+# (status/venue/journal_doi), (2) this preferred-citation block, (3) the two
+# PREPRINT rows in sigma_c/THEOREM_MAP.md -> PUBLISHED.
+preferred-citation:
+  type: article
+  title: "The Parrot's Theorems"
+  authors:
+    - name: "ForgottenForge"
+  year: 2026
+  doi: "10.5281/zenodo.22066713"
+  url: "https://doi.org/10.5281/zenodo.22066713"
+  notes: >-
+    Preprint on Zenodo. Part of the
+    ForgottenForge sigma_c / Parrot research programme (the fuller hub, Parrot 2,
+    is in preparation). A journal publication may follow.

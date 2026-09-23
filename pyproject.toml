@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sigma-c-framework"
+dynamic = ["version"]  # single-sourced from sigma_c.__version__ (see [tool.setuptools.dynamic])
+description = "Susceptibility-based operational scale selection: a disciplined-reader kernel for the scale-selector sigma_c from 'The Parrot's Theorems' (Zenodo doi:10.5281/zenodo.22066713). Every output carries a 4-code applicability verdict (OK / NOT_APPLICABLE / NOT_RESOLVABLE / NOT_IDENTIFIED) and a blindness map."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "AGPL-3.0-or-later OR LicenseRef-ForgottenForge-Commercial"}
+authors = [
+    {name = "ForgottenForge", email = "nfo@forgottenforge.xyz"}
+]
+keywords = ["scale-selection", "susceptibility", "transfer-operator", "spectral-gap", "operational-scale", "statistical-physics", "reproducibility"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+# The kernel imports ONLY numpy. Everything numeric (analyze, the 4-code verdict,
+# the blindness map, to_dict) runs headless with no plotting stack. matplotlib is
+# needed ONLY for result.card() (the PNG) and is an opt-in extra, so a pipeline
+# install stays lean.
+dependencies = [
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+# Plotting: only result.card() needs it. `import sigma_c` and analyze() do not.
+plot = ["matplotlib>=3.4.0"]
+dev = ["pytest>=6.0", "black>=21.0", "mypy>=0.900", "matplotlib>=3.4.0"]
+# Opt-in SDK adapters (sigma_c.adapters.*). The kernel never imports these; each
+# extra pulls only the one SDK its adapter translates from.
+qiskit = ["qiskit>=1.0"]
+pennylane = ["pennylane>=0.35"]
+braket = ["amazon-braket-sdk>=1.70"]
+
+[project.urls]
+Homepage = "https://forgottenforge.xyz"
+Repository = "https://github.com/forgottenforge/sigma-c-framework"
+Issues = "https://github.com/forgottenforge/sigma-c-framework/issues"
+
+[tool.setuptools]
+# include-package-data MUST stay false: with the default (true), MANIFEST.in's
+# recursive-include would pull non-package files into the wheel. The explicit
+# `packages` list below and `[tool.setuptools.package-data]` are the sole authority
+# for what the wheel ships; MANIFEST.in governs only the (full-source) sdist.
+include-package-data = false
+packages = [
+    "sigma_c",
+    "sigma_c.adapters",       # opt-in SDK translators, NOT imported by the kernel
+    "sigma_c.core",
+    "sigma_c.examples",
+    "sigma_c.experimental",   # opt-in, NOT imported by the kernel (see its PREREG)
+    "sigma_c.tests",
+    "sigma_c.windows",
+]
+
+[tool.setuptools.dynamic]
+# Single source of truth for the version: sigma_c/__init__.py __version__.
+version = {attr = "sigma_c.__version__"}
+
+[tool.setuptools.package-data]
+sigma_c = ["*.md", "*.jpg", "examples/*.py", "examples/*.md", "examples/*.png", "experimental/*.md"]

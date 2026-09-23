@@ -1,0 +1,31 @@
+include README.md
+include CHANGELOG.md
+include LICENSE
+include LICENSE-COMMERCIAL.md
+include LICENSING.md
+include NOTICE
+include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include SECURITY.md
+include pyproject.toml
+include CITATION.cff
+# THEOREM_MAP.md ships inside the package (sigma_c/THEOREM_MAP.md) via
+# [tool.setuptools.package-data]; there is no root copy.
+recursive-include sigma_c *.py *.md
+# Lean proofs (App B.3/B.4) are NOT distributed. The sdist is published to PyPI,
+# so "sdist-only" still ships; until the proofs have an INDEPENDENT human read
+# (machine-checked by Lean+Mathlib is not the same as reviewed), they stay in the
+# git repo ONLY -- out of both wheel and sdist. Re-add here after that review.
+prune proofs
+prune dist
+prune build
+prune .venv
+prune .vscode
+prune .idea
+prune .pytest_cache
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.so
+global-exclude *.pyd
+global-exclude *.dll
+global-exclude .DS_Store
