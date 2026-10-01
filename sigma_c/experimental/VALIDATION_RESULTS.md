@@ -136,7 +136,7 @@ n_shuffle=200.
 **The complete module meets every App C criterion from outside** (rounds 2->3 fixed
 and confirmed the false-positive control; round 4 validated both channels per
 criterion). It stays `experimental/` — `validated=False`, no `OK`, kernel does not
-import it — because promotion out of `experimental/` requires the professor's read
+import it — because promotion out of `experimental/` requires an independent certifying review
 (PREREG criterion 2) and the freeze + outside-runs first (criterion 3). The freeze
 itself is not blocked: the whole module has now been seen green from outside once. It delivers **rank** and **peak location**
 independent of the dial, and a detailed-balance cross-check; it delivers **no

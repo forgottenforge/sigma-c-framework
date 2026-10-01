@@ -9,7 +9,7 @@ authors:
   - name: "ForgottenForge"
     email: "nfo@forgottenforge.xyz"
     website: "https://forgottenforge.xyz"
-version: "6.0.0"
+version: "6.0.1"
 license: "AGPL-3.0-or-later OR LicenseRef-ForgottenForge-Commercial"
 url: "https://github.com/forgottenforge/sigma-c-framework"
 repository-code: "https://github.com/forgottenforge/sigma-c-framework"
@@ -30,5 +30,5 @@ preferred-citation:
   url: "https://doi.org/10.5281/zenodo.22066713"
   notes: >-
     Preprint on Zenodo. Part of the
-    ForgottenForge sigma_c / Parrot research programme (the fuller hub, Parrot 2,
+    ForgottenForge sigma_c / Parrot research programme (the fuller companion work, Parrot 2,
     is in preparation). A journal publication may follow.

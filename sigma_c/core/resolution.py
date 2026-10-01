@@ -89,7 +89,14 @@ def peak_count_stable_in_window(
     c0 = count(r0)
     lo = r0 / factor
     hi = min(1.0, r0 * factor)
-    return all(count(float(r)) == c0 for r in np.linspace(lo, hi, n_win))
+    counts = [count(float(r)) for r in np.linspace(lo, hi, n_win)]
+    # A count of ZERO at the strict (high-r) end is the degenerate "no peak clears
+    # this extreme convention" case -- under TOPOGRAPHIC prominence no peak on a
+    # baseline reaches prominence == max(chi), so count -> 0 as r -> 1 always. That
+    # is not a destabilization of the r0 reading. Real instability is a DIFFERENT
+    # NON-ZERO count (a borderline secondary mode appearing/vanishing) or MORE peaks
+    # at a looser convention (a hidden mode the r0 reading misses). (6.0.1)
+    return all(c == c0 or c == 0 for c in counts)
 
 
 def resolution_band(
@@ -145,7 +152,10 @@ def resolution_band(
     flip_high: Optional[float] = None   # smallest r > declared where count differs
     for r in grid:
         c = count(float(r))
-        if c == current_count:
+        if c == current_count or c == 0:
+            # ignore the degenerate drop to ZERO peaks at a too-strict convention
+            # (no peak reaches prominence == max(chi)); it is not a real flip of the
+            # reading. Only a different NON-ZERO count is a convention flip. (6.0.1)
             continue
         if r < min_prominence_ratio:
             flip_low = float(r)         # ascending grid -> ends at the largest

@@ -51,7 +51,7 @@ from sigma_c.profile_tau import tau_from_profile, ProfileTauResult
 # The second (dial-free) channel is EXPERIMENTAL and deliberately NOT imported
 # here: `from sigma_c.experimental.jitter import ...` (see experimental/PREREG_jitter.md).
 
-__version__ = "6.0.0"
+__version__ = "6.0.1"
 
 
 def __getattr__(name: str):
@@ -86,7 +86,7 @@ __paper__ = {
     "journal_doi": None,                               # minted on journal publication
     "url": "https://doi.org/10.5281/zenodo.22066713",
     "note": ("Part of the ForgottenForge sigma_c / Parrot research programme; the "
-             "fuller hub (Parrot 2) is in preparation. A journal publication may "
+             "fuller companion work (Parrot 2) is in preparation. A journal publication may "
              "follow this preprint."),
 }
 # Derived (single-sourced) aliases kept for backward compatibility.

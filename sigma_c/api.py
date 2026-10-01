@@ -55,6 +55,7 @@ def analyze(
     label: str = "",
     preprocessing_scale_equivariant: Optional[bool] = None,
     gamma_A: Optional[float] = None,
+    selfadjoint_rtol: Optional[float] = None,
 ) -> Result:
     """
     The hero call. Cite: def:sigmac, prop:structural-reduction. (The regime
@@ -136,6 +137,38 @@ def analyze(
     win = resolve(window)
     sigma_arr = np.asarray(sigma, dtype=float)
 
+    # --- shared dial contract (Part 0) --------------------------------------
+    # The SAME input guard on every entry path. chi_O() enforces these for the
+    # array-O path, but the precomputed-chi and callable-O paths route around
+    # chi_O, so without this they silently accept (or noisily process) a dial
+    # the array path rejects. Enforced once here, before branching, so all three
+    # paths reject identically and nothing ever reaches log(sigma<=0) or a
+    # zero-spacing derivative.
+    from sigma_c.errors import InvalidInputError
+    if sigma_arr.ndim != 1 or sigma_arr.size < 5:
+        raise InvalidInputError(
+            "Need at least 5 sample points on a 1-D sigma dial."
+        )
+    if not np.all(np.isfinite(sigma_arr)):
+        raise InvalidInputError(
+            "sigma must be finite (no NaN/Inf): a non-finite dial value would "
+            "propagate into a spurious sigma_c / OK verdict. Rejected, not read "
+            "as a measurement."
+        )
+    if np.any(sigma_arr <= 0):
+        raise InvalidInputError(
+            "sigma values must be strictly positive (log-domain): sigma_c lives "
+            "on a log-spaced dial, so sigma <= 0 has no meaning. If sigma is a "
+            "time axis starting at 0, drop the t=0 sample or shift the axis so "
+            "all values are > 0."
+        )
+    if np.any(np.diff(np.sort(sigma_arr)) <= 0):
+        raise InvalidInputError(
+            "sigma values must be distinct (a strictly increasing dial): "
+            "duplicate samples make the log-spacing zero and the chi derivative "
+            "undefined. Aggregate replicates at the same dial before analysis."
+        )
+
     # --- tau-route declaration validation (Parts A + B) ----------------------
     # The tau-route runs iff a spectrum OR an operator was supplied. On that route
     # T_star is REQUIRED (Part A: no silent default 1) and sigma_axis is a MANDATORY
@@ -196,11 +229,23 @@ def analyze(
         # normalization, smoothed measurement, etc.). Honest data path:
         # use the chi values verbatim, do not re-derive them.
         chi_arr = np.asarray(chi, dtype=float)
+        if chi_arr.shape != sigma_arr.shape:
+            raise InvalidInputError(
+                f"chi and sigma must have the same shape (got {chi_arr.shape} "
+                f"vs {sigma_arr.shape}): a length mismatch would silently "
+                f"misalign or truncate the profile."
+            )
         order = np.argsort(sigma_arr)
         sigma_grid = sigma_arr[order]
         chi = chi_arr[order]
         if O is not None and not callable(O):
-            O_vals = np.asarray(O, dtype=float)[order]
+            O_arr = np.asarray(O, dtype=float)
+            if O_arr.shape != sigma_arr.shape:
+                raise InvalidInputError(
+                    f"O and sigma must have the same shape (got {O_arr.shape} "
+                    f"vs {sigma_arr.shape})."
+                )
+            O_vals = O_arr[order]
         elif callable(O):
             O_vals = O(sigma_grid)
         else:
@@ -238,6 +283,19 @@ def analyze(
     citations: List[str] = ["def:sigmac", "prop:structural-reduction"]
     notes: List[str] = []
 
+    # 6.0.1: the window's weight is NOT applied to O here -- chi is
+    # computed from the raw observable and `win` contributes only rho_star. If a
+    # caller passes a non-bare window with a raw-O path, tau_bridge divides by
+    # rho_star WITHOUT a compensating peak shift (an internally inconsistent bridge).
+    # Warn, so the 1/rho_star factor is not read as the window having shaped O.
+    if getattr(win, "name", "bare") != "bare" and chi is None:
+        notes.append(
+            f"window='{getattr(win, 'name', '?')}' carries a weight that analyze() does "
+            f"NOT apply to O: chi is computed from the raw observable and the window only "
+            f"sets rho_star={win.rho_star:.4g}. If you intend a windowed observable, build "
+            f"it yourself and pass it as O (or chi); otherwise use window='bare'."
+        )
+
     # --- live-route spectral analysis (the certified tau) --------------------
     # The ONE place the code computes tau from the spectrum, with the P2.2 gate-
     # hardening branches (complex pair / Jordan / non-normal / provenance band).
@@ -260,6 +318,10 @@ def analyze(
             operator=operator, spectrum=spectrum, T_star=T_star,
             inner_product=inner_product,
             selfadjoint_declared=(spectrum is not None),
+            band_tol=selfadjoint_rtol,  # 6.0.1: caller-declared reversibility
+            # tolerance (None -> strict default). An operator built from rate constants
+            # rounded to 3-4 digits has a symmetry residual ~1e-3 >> the ~1e-13 default
+            # and is refused; a DECLARED, reported tolerance keeps the honesty usable.
         )
         selfadjoint_val = rev.selfadjoint
         tau_abscissa_val = rev.tau_spectral
@@ -412,6 +474,25 @@ def analyze(
     # from the reversible engine; it is a DIFFERENT object, not the bridge.
     tau_bridge_val = sigma_c_val / win.rho_star if win.rho_star > 0 else None
     gamma_val = gamma_vals[0]
+
+    # 6.0.1: a merged two-mode relaxation also yields exactly ONE chi
+    # peak, so regime-I OK means "one resolved peak under the convention", NOT "one
+    # physical mode". Surface a non-fatal shape residual against a single-mode
+    # exponential template so OK is not silently read as a single-mode certificate.
+    try:
+        from sigma_c.profile_tau import _template, _relative_residual
+        _res_1mode = _relative_residual(
+            chi, _template(sigma_grid / sigma_c_val, "exponential"))
+        if _res_1mode > 0.10:
+            notes.append(
+                f"single-peak SHAPE residual vs a one-mode exponential template is "
+                f"{_res_1mode:.3g} (> 0.10): regime-I OK means one resolved peak under "
+                f"the convention, NOT one physical mode -- a merged two-mode relaxation "
+                f"reads as one peak too. If the single-mode claim matters, declare a "
+                f"profile and use tau_from_profile()."
+            )
+    except Exception:
+        pass
 
     # bridge-vs-abscissa diagnostic: only under evolution_time (both then in T_star-time).
     tau_bridge_spectral_ratio = None

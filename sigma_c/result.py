@@ -311,7 +311,12 @@ class Result:
     the sigma_c-only path (no spectrum) and when there is no decaying mode. This is
     the FALLEN bridge value
     sigma_c/rho_star now lives ONLY under `tau_bridge` (sigma-axis units). Read
-    `tau_abscissa_status` (thm:abscissa) and `window_readability_status` (thm:auto)."""
+    `tau_abscissa_status` (thm:abscissa) and `window_readability_status` (thm:auto).
+
+    SCOPE (6.0.1): this is the abscissa of the SLOWEST mode (the largest
+    lambda below the leading one) of the WHOLE operator. A faster sub-process -- e.g.
+    channel inactivation when activation is slower -- is NEVER the certified
+    tau_abscissa here; isolate it on a restricted operator if you need its rate."""
 
     # --- Profile constant provenance ---
     rho_star: Optional[float]
@@ -971,7 +976,14 @@ class Result:
             wr = self.window_readability_status
             wflag = "" if wr.ok else f"  [{wr.code.value}]"
             reb = self.rate_error_bound
-            reb_str = f"  (rel. rate-error bound {reb:.3g})" if reb is not None else ""
+            # 6.0.1: OK here certifies DOMINANCE, not accuracy; flag a
+            # rate-error bound above 100% so a caller filtering on .ok alone sees it.
+            reb_str = (
+                f"  (rel. rate-error bound {reb:.3g}"
+                + ("; >100% -- DOMINANCE only, call window_for_precision(eta) for accuracy"
+                   if reb > 1.0 else "")
+                + ")"
+            ) if reb is not None else ""
             lines.append(f"window_read.  : {wr.code.value}{wflag}{reb_str}")
             if not wr.ok:
                 lines.append(f"                {warn} {wr.reason}")

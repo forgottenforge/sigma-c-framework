@@ -64,7 +64,11 @@ def test_peak_ceiling_is_a_declared_convention():
     # the declared ceiling: NOT_RESOLVABLE at default 5 (peaks still listed),
     # OK when the caller raises the ceiling. This isolates the ceiling convention
     # from the (separate) noise / stability gate.
-    x = np.geomspace(0.3, 30, 300)
+    # Give each bump a full decade of room on both sides so NONE of the six chi
+    # lobes is truncated at the grid edge: under topographic prominence (6.0.1) an
+    # edge-truncated outer lobe has low prominence and would be convention-sensitive,
+    # which is a construction artifact, not the ceiling this test means to isolate.
+    x = np.geomspace(0.1, 100, 400)
     def lg(c):
         return np.exp(-((np.log(x) - np.log(c)) ** 2) / 0.03)
     O = lg(1.0) + lg(5.0) + lg(25.0)

@@ -61,10 +61,13 @@ def test_peak_count_regime_III_no_interior_peak():
 # flips. This IS the documented sensitivity of the geometric operation.
 # ---------------------------------------------------------------------------
 
-# Fixed multi-bump profile: main peak height 1.0 (index 2), secondary bump
-# height 0.40 (index 6). Both are strict interior local maxima. The secondary
-# bump sits at exactly 40% of max chi, so it is counted (II_geom) while the
-# prominence floor r <= 0.40 and dropped (I_geom) once r > 0.40.
+# Fixed multi-bump profile: main peak (index 2, height 1.0), secondary bump
+# (index 6, height 0.40). Both are strict interior local maxima. Under TOPOGRAPHIC
+# prominence (6.0.1) the secondary bump rises only 0.40 - 0.20 = 0.20
+# above its higher flanking saddle (the valley at index 4 = 0.2), so its
+# prominence / max(chi) = 0.20: counted (II_geom) while the prominence floor
+# r <= 0.20, dropped (I_geom) once r > 0.20. (The old height gate flipped at the
+# bare height 0.40; prominence flips at the true 0.20.)
 _SWEEP_CHI = np.array([0.0, 0.5, 1.0, 0.5, 0.2, 0.3, 0.40, 0.3, 0.1])
 
 
@@ -73,23 +76,23 @@ def _regime_at(ratio: float) -> str:
 
 
 def test_min_prominence_ratio_sweep_flip_point():
-    # below the secondary bump's relative height -> two peaks (II_geom)
-    assert _regime_at(0.35) == "II_geom"
+    # below the secondary bump's PROMINENCE (0.20) -> two peaks (II_geom)
+    assert _regime_at(0.15) == "II_geom"
     # above it -> the secondary bump drops out -> one peak (I_geom)
-    assert _regime_at(0.45) == "I_geom"
+    assert _regime_at(0.25) == "I_geom"
 
-    # Locate the flip by sweeping and pin it at the secondary bump's relative
-    # height 0.40 (a bump at 40% of max chi survives r<=0.40, dies at r>0.40).
-    ratios = np.linspace(0.30, 0.50, 2001)
+    # Locate the flip by sweeping and pin it at the secondary bump's PROMINENCE
+    # 0.20 (a bump of prominence 0.20 survives r<=0.20, dies at r>0.20).
+    ratios = np.linspace(0.10, 0.30, 2001)
     regimes = [_regime_at(float(r)) for r in ratios]
     flip_idx = next(
         i for i in range(1, len(regimes)) if regimes[i] != regimes[i - 1]
     )
     flip_ratio = float(ratios[flip_idx])
-    # the count flips II -> I as the ratio crosses ~0.40
+    # the count flips II -> I as the ratio crosses ~0.20
     assert regimes[flip_idx - 1] == "II_geom"
     assert regimes[flip_idx] == "I_geom"
-    assert abs(flip_ratio - 0.40) < 1e-3, flip_ratio
+    assert abs(flip_ratio - 0.20) < 2e-3, flip_ratio
 
 
 # ---------------------------------------------------------------------------

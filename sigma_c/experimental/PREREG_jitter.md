@@ -10,7 +10,7 @@ validation can be held to them; the paper is the authority.
 > failed validation — see VALIDATION_RESULTS.md). The rebuilt module HAS since been
 > run through this validation by independent different-provenance checkers across
 > four rounds — all App C criteria pass (VALIDATION_RESULTS.md); promotion out of
-> `experimental/` still awaits the professor's certifying read.
+> `experimental/` still awaits an independent certifying review.
 
 ## The channel (Section 5, App B.3/B.4)
 Clamp all dials; take repeated block readings of several instruments. The

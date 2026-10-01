@@ -167,6 +167,21 @@ def tau_from_profile(
                     "not single-mode, so a single declared-profile tau does not apply."),
         )
 
+    # 6.0.1: a scalar sigma_c can still carry a non-OK kernel verdict --
+    # NOT_RESOLVABLE (convention-unstable) or NOT_APPLICABLE (A1). The profile route
+    # must propagate that refusal, not lift it to OK_CONDITIONAL (the silent false-green
+    # the 4-code contract exists to prevent). The None/list cases above are already
+    # caught; this closes the convention-unstable-scalar and A1 leaks.
+    _sv = res.sigma_c_status
+    if _sv is not None and not _sv.ok:
+        return ProfileTauResult(
+            tau=None, sigma_c=float(res.sigma_c), profile=profile,
+            residual=float("inf"), max_residual=max_residual,
+            code=_sv.code.value, window=win_name, rho_star=rho,
+            reason=(f"the kernel's own sigma_c verdict is {_sv.code.value}: {_sv.reason} "
+                    f"A declared-profile tau cannot stand over a kernel refusal."),
+        )
+
     sc = float(res.sigma_c)
     sg = np.asarray(res._profile_sigma, dtype=float)
     chi = np.asarray(res._profile_chi, dtype=float)

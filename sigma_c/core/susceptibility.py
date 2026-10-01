@@ -120,39 +120,64 @@ def find_interior_maxima(
     Indices of strict interior local maxima of chi.
 
     A peak must clear BOTH thresholds:
-      - the RELATIVE prominence convention `min_prominence_ratio` * max(chi), and
+      - the RELATIVE TOPOGRAPHIC PROMINENCE convention: it must rise
+        `min_prominence_ratio` * max(chi) above the HIGHER of its two flanking
+        saddles (the lowest sample on each side before chi rises above the peak
+        again), and
       - the ABSOLUTE numerical-noise floor `chi_abs_floor`.
 
-    The relative threshold alone normalises chi to its OWN maximum, so in pure
-    rounding noise (a constant observable) it always finds "peaks" -- chi_max is
-    then itself float noise. The absolute floor, set by the caller from the
-    observable's variation and the log-step (~ eps * max|O| / dlog), rejects peaks
-    that are indistinguishable from the log-derivative's rounding error. Cite:
-    def:Onice, def:Onice-multi for the multi-peak case.
+    Prominence, not bare height: a bare height gate (chi[i] >= ratio*max(chi))
+    counts a noise wiggle on the flank of the dominant peak as a separate peak and
+    fabricates regime II at moderate SNR (6.0.1). Topographic prominence
+    measures how far a candidate stands ABOVE the valley joining it to a taller
+    neighbour, so flank ripples on the main peak are correctly rejected. The
+    absolute floor, set by the caller from the observable's variation and the
+    log-step (~ eps * max|O| / dlog), additionally rejects peaks indistinguishable
+    from the log-derivative's rounding error. Cite: def:Onice, def:Onice-multi.
     """
     n = len(chi)
     if n < 3:
         return []
-    peaks: List[int] = []
     chi_max = float(np.max(chi))
-    threshold = min_prominence_ratio * chi_max if chi_max > 0 else 0.0
-    threshold = max(threshold, float(chi_abs_floor))
-    # Scan for interior maxima INCLUDING flat-topped (plateau) peaks: a smooth peak
-    # whose true maximum lies between two grid points shows up as two (or more) tied
-    # top samples, which a strict `chi[i] > chi[i+1]` test misses entirely (a real
-    # peak then reads as regime III). A plateau that rises in and falls out counts
-    # once, at its centre.
+    prom_floor = (min_prominence_ratio * chi_max) if chi_max > 0 else 0.0
+    # (1) Collect interior local maxima INCLUDING flat-topped (plateau) peaks: a smooth
+    # peak whose true maximum lies between two grid points shows up as two (or more)
+    # tied top samples, which a strict `chi[i] > chi[i+1]` test misses entirely (a real
+    # peak then reads as regime III). A plateau that rises in and falls out counts once,
+    # at its centre.
+    cands: List[int] = []
     i = boundary_margin
     while i <= n - 1 - boundary_margin:
-        if chi[i] >= threshold and chi[i] > chi[i - 1]:
+        if chi[i] > chi[i - 1]:
             j = i
             while j + 1 <= n - 1 - boundary_margin and chi[j + 1] == chi[i]:
                 j += 1
             if j + 1 <= n - 1 and chi[j + 1] < chi[i]:
-                peaks.append((i + j) // 2)   # plateau centre (== i for a lone peak)
+                cands.append((i + j) // 2)   # plateau centre (== i for a lone peak)
                 i = j + 1
                 continue
         i += 1
+    # (2) TOPOGRAPHIC PROMINENCE gate (6.0.1): a candidate is a peak only if it
+    # rises `min_prominence_ratio` * max(chi) above the HIGHER of its two flanking
+    # saddles (the lowest sample on each side before chi rises above the peak again),
+    # AND still clears the absolute numerical-noise floor `chi_abs_floor`. This is the
+    # prominence the parameter name promises -- a bare height threshold
+    # (chi[i] >= ratio*chi_max) counts a noise wiggle on the flank of the main peak as
+    # a separate peak and fabricates regime II at moderate SNR.
+    peaks: List[int] = []
+    for p in cands:
+        h = float(chi[p])
+        k = p - 1
+        lmin = h
+        while k >= 0 and chi[k] <= h:
+            lmin = min(lmin, float(chi[k])); k -= 1
+        k = p + 1
+        rmin = h
+        while k < n and chi[k] <= h:
+            rmin = min(rmin, float(chi[k])); k += 1
+        prominence = h - max(lmin, rmin)
+        if h >= float(chi_abs_floor) and prominence >= prom_floor:
+            peaks.append(p)
     return peaks
 
 

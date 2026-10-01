@@ -151,7 +151,7 @@ it, it emits no certified `OK` verdict, and everything returns `validated=False`
 pre-registered validation (App C — see `experimental/PREREG_jitter.md`) has been run
 from outside across four independent rounds, all App C criteria passing
 (`experimental/VALIDATION_RESULTS.md`); promotion out of `experimental/` still awaits
-the professor's certifying read. Import it explicitly to experiment:
+an independent certifying review. Import it explicitly to experiment:
 
 The App C two-channel run is complete: **Channel 1** (`pair_parity_rank`) reads the
 per-shot covariance of co-measured pair parities (fast), **Channel 2** (`jitter_rank`)

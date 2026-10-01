@@ -53,8 +53,7 @@ discipline is to not ship it** — open a discussion instead.
 - Body (optional): why, not what.
 - **Sign off every commit** (`git commit -s`, adding a `Signed-off-by:` line) —
   this is your Developer Certificate of Origin (DCO) attestation.
-- **Do not add `Co-Authored-By:` trailers or tool-attribution links for AI
-  assistants.**
+- **Do not add `Co-Authored-By:` trailers or tool-attribution links.**
 
 ### Tests
 
